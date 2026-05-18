@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"auth-todo-service/internal/domain/model"
 	"context"
 	"errors"
 	"fmt"
@@ -14,10 +15,10 @@ import (
 
 // UserRepository - интерфейс репозитория
 type UserRepository interface {
-	Create(ctx context.Context, user *domain.User) error
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
-	GetByEmail(ctx context.Context, email string) (*domain.User, error)
-	Update(ctx context.Context, user *domain.User) error
+	Create(ctx context.Context, user *model.User) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
+	GetByEmail(ctx context.Context, email string) (*model.User, error)
+	Update(ctx context.Context, user *model.User) error
 	IsEmailExists(ctx context.Context, email string) (bool, error)
 	CreateRefreshToken(ctx context.Context, refreshToken *domain.RefreshToken) error
 	GetRefreshTokenByValue(ctx context.Context, refreshTokenValue string) (*domain.RefreshToken, error)
@@ -32,7 +33,7 @@ func NewUserRepository(db *pgxpool.Pool) *userRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
+func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 	query := `
 		INSERT INTO users (id, full_name, email, password_hash, role, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)`
@@ -50,13 +51,13 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	return err
 }
 
-func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	query := `
 		SELECT id, full_name, email, password_hash, role, created_at, updated_at
 		FROM users 
 		WHERE id = $1`
 
-	var user domain.User
+	var user model.User
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&user.ID,
 		&user.FullName,
@@ -77,13 +78,13 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 	return &user, nil
 }
 
-func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r *userRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	query := `
 		SELECT id, full_name, email, password_hash, role, created_at, updated_at
 		FROM users 
 		WHERE email = $1`
 
-	var user domain.User
+	var user model.User
 	err := r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID,
 		&user.FullName,
@@ -112,7 +113,7 @@ func (r *userRepository) IsEmailExists(ctx context.Context, email string) (bool,
 	return exists, err
 }
 
-func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
+func (r *userRepository) Update(ctx context.Context, user *model.User) error {
 	return nil
 }
 
