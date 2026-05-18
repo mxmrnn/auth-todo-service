@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: auth_task_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_task_manager
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_task_manager"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - backend
+
+  migrate:
+    image: migrate/migrate:4
+    container_name: auth_task_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    command:
+      - "-path"
+      - "/migrations"
+      - "-database"
+      - "postgres://postgres:postgres@postgres:5432/auth_task_manager?sslmode=disable"
+      - "-verbose"
+      - "up"
+    restart: "no"
+    networks:
+      - backend
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - backend
+
+  auth-app:
+    build: .
+    container_name: auth_task_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      # ==================== SERVER ====================
+      SERVER_PORT: "8081"           # ← внутри контейнера должен быть 8080
+      SERVER_MODE: "release"        # debug / release
+
+      DB_HOST: postgres
+      DB_NAME: auth_task_manager
+
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_NAME: auth_task_manager
+
+      JWT_SECRET_KEY: "super-secret-key-change-this-in-production-2026"
+      JWT_ACCESS_TTL: "60m"
+      JWT_REFRESH_TTL: "168h"
+
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+
+      APP_NAME: "auth-service"
+      GIN_MODE: debug
+
+    ports:
+      - "8081:8081"
+    networks:
+      - backend
+    restart: unless-stopped
+
+networks:
+  backend:
+    driver: bridge
+    name: task_system_backend
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
