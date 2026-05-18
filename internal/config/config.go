@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Postgres PostgresConfig `mapstructure:"postgres"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
-	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
+	Server      ServerConfig      `mapstructure:"server"`
+	Postgres    PostgresConfig    `mapstructure:"postgres"`
+	JWT         JWTConfig         `mapstructure:"jwt"`
+	RabbitMQ    RabbitMQConfig    `mapstructure:"rabbitmq"`
+	TaskService TaskServiceConfig `mapstructure:"task_service"`
 }
 
 type ServerConfig struct {
@@ -32,6 +33,10 @@ type PostgresConfig struct {
 	MaxConnIdleTime time.Duration `mapstructure:"max_conn_idle_time"`
 }
 
+type TaskServiceConfig struct {
+	BaseURL string `mapstructure:"base_url"`
+}
+
 type JWTConfig struct {
 	SecretKey  string        `mapstructure:"secret_key"`
 	AccessTTL  time.Duration `mapstructure:"access_ttl"`
@@ -39,10 +44,7 @@ type JWTConfig struct {
 }
 
 type RabbitMQConfig struct {
-	Host     string `mapstructure:"host" default:"localhost"`
-	Port     string `mapstructure:"port" default:"5672"`
-	User     string `mapstructure:"user" default:"guest"`
-	Password string `mapstructure:"password" default:"guest"`
+	URL string `mapstructure:"url" validate:"required,url"`
 }
 
 func Load() (*Config, error) {
@@ -76,6 +78,13 @@ func Load() (*Config, error) {
 
 	setDefaults(&cfg)
 
+	if cfg.RabbitMQ.URL == "" {
+		return nil, fmt.Errorf("RABBITMQ_URL is required")
+	}
+	if cfg.TaskService.BaseURL == "" {
+		return nil, fmt.Errorf("TASK_SERVICE_BASE_URL is required")
+	}
+
 	fmt.Printf("Config loaded - Host=%s, DB=%s, Port=%s\n",
 		cfg.Postgres.Host, cfg.Postgres.DBName, cfg.Postgres.Port)
 
@@ -95,6 +104,8 @@ func bindEnvVars() {
 	viper.BindEnv("jwt.secret_key", "JWT_SECRET_KEY")
 	viper.BindEnv("jwt.access_ttl", "JWT_ACCESS_TTL")
 	viper.BindEnv("jwt.refresh_ttl", "JWT_REFRESH_TTL")
+
+	viper.BindEnv("rabbitmq.url", "RABBITMQ_URL")
 }
 
 func setDefaults(cfg *Config) {
