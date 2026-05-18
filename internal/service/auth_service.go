@@ -50,7 +50,6 @@ func (s *AuthService) Register(ctx context.Context, fullName, email, password st
 	if err != nil {
 		return nil, err
 	}
-
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
 	}
@@ -67,11 +66,6 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (access
 		return "", "", err
 	}
 
-	if !user.IsActive {
-		return "", "", domain.ErrInvalidCredentials
-	}
-
-	// Проверяем пароль
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return "", "", domain.ErrInvalidCredentials
 	}

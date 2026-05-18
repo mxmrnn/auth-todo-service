@@ -34,8 +34,8 @@ func NewUserRepository(db *pgxpool.Pool) *userRepository {
 
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	query := `
-		INSERT INTO users (id, full_name, email, password_hash, role, is_active, is_verified, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+		INSERT INTO users (id, full_name, email, password_hash, role, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
 	_, err := r.db.Exec(ctx, query,
 		user.ID,
@@ -43,8 +43,6 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 		user.Email,
 		user.PasswordHash,
 		user.Role,
-		user.IsActive,
-		user.IsVerified,
 		user.CreatedAt,
 		user.UpdatedAt,
 	)
@@ -54,7 +52,7 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 
 func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	query := `
-		SELECT id, full_name, email, password_hash, role, is_active, is_verified, created_at, updated_at
+		SELECT id, full_name, email, password_hash, role, created_at, updated_at
 		FROM users 
 		WHERE id = $1`
 
@@ -65,8 +63,6 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 		&user.Email,
 		&user.PasswordHash,
 		&user.Role,
-		&user.IsActive,
-		&user.IsVerified,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -83,7 +79,7 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
-		SELECT id, full_name, email, password_hash, role, is_active, is_verified, created_at, updated_at
+		SELECT id, full_name, email, password_hash, role, created_at, updated_at
 		FROM users 
 		WHERE email = $1`
 
@@ -94,8 +90,6 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		&user.Email,
 		&user.PasswordHash,
 		&user.Role,
-		&user.IsActive,
-		&user.IsVerified,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
