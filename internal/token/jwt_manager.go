@@ -1,11 +1,10 @@
 package token
 
 import (
+	"auth-todo-service/internal/domain/model"
 	"errors"
 	"fmt"
 	"time"
-
-	"auth-todo-service/internal/domain"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -23,9 +22,9 @@ type JWTManager struct {
 }
 
 type Claims struct {
-	UserID uuid.UUID       `json:"user_id"`
-	Email  string          `json:"email"`
-	Role   domain.UserRole `json:"role"`
+	UserID uuid.UUID      `json:"user_id"`
+	Email  string         `json:"email"`
+	Role   model.UserRole `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -39,7 +38,7 @@ func NewJWTManager(secretKey string, accessTTL, refreshTTL time.Duration) *JWTMa
 }
 
 // GenerateAccessToken генерирует короткоживущий Access Token
-func (m *JWTManager) GenerateAccessToken(user *domain.User) (string, error) {
+func (m *JWTManager) GenerateAccessToken(user *model.User) (string, error) {
 	claims := Claims{
 		UserID: user.ID,
 		Email:  user.Email,
