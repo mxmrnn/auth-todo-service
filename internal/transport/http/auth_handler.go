@@ -101,7 +101,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found in context"})
 		return
 	}
 
@@ -119,7 +119,6 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 
 	resp := dto.UserInfoResponse{
 		ID:        u.ID,
-		FullName:  u.FullName,
 		Email:     u.Email,
 		Role:      u.Role,
 		CreatedAt: u.CreatedAt,
