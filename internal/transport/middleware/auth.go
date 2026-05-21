@@ -1,8 +1,9 @@
 package middleware
 
 import (
+	"auth-todo-service/internal/domain/model"
 	"auth-todo-service/internal/token"
-	// "auth-todo-service/internal/token"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,7 +31,7 @@ func (m *AuthMiddleware) AuthRequired() gin.HandlerFunc {
 		claims, err := m.jwt.ParseAccessToken(tokenStr)
 		if err != nil {
 			status := 401
-			if err == token.ErrTokenExpired {
+			if errors.Is(err, token.ErrTokenExpired) {
 				status = 401 // или 403
 			}
 			c.JSON(status, gin.H{"error": err.Error()})
@@ -38,10 +39,12 @@ func (m *AuthMiddleware) AuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		// Сохраняем данные пользователя в контексте
-		c.Set("user_id", claims.UserID)
-		c.Set("user_email", claims.Email)
-		c.Set("user_role", claims.Role)
+		user := &model.User{
+			ID:    claims.UserID,
+			Email: claims.Email,
+			Role:  claims.Role,
+		}
+		c.Set("user", user)
 
 		c.Next()
 	}
