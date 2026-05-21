@@ -3,12 +3,15 @@ package main
 import (
 	"auth-todo-service/internal/client"
 	"auth-todo-service/internal/client/task"
+	"auth-todo-service/internal/publisher"
 	"auth-todo-service/internal/repository/postgres"
 	"auth-todo-service/internal/transport"
 	httpv1 "auth-todo-service/internal/transport/http"
 	"auth-todo-service/internal/transport/middleware"
+	"auth-todo-service/internal/transport/rpc"
 	"context"
 	"fmt"
+	"github.com/rabbitmq/amqp091-go"
 	"log"
 	"net/http"
 	"os"
@@ -64,6 +67,18 @@ func main() {
 	taskClient := task.NewTaskClient(rabbitMq) //поменять на конфиг круто
 	authService := service.NewAuthService(userRepo, jwtManager, eventPublisher)
 	authHandler := httpv1.NewAuthHandler(authService, taskClient)
+
+	rpcServer, err := rpc.NewServer(cfg.RabbitMQ.URL)
+	if err != nil {
+		log.Fatalf("failed to create rpc server: %w", err)
+	}
+	rpcHandler := rpc.NewHandler(authService)
+
+	err = rpcServer.Start("auth-service.rpc", rpcHandler.GetUserInfoHandler)
+	if err != nil {
+		log.Fatalf("Failed to start RPC server: %v", err)
+	}
+	log.Println("RPC Server started on queue: auth-service.rpc")
 
 	// Gin Setup
 	gin.SetMode(cfg.Server.Mode)
