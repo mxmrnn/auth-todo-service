@@ -3,17 +3,17 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/viper"
 	"strings"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Server      ServerConfig      `mapstructure:"server"`
-	Postgres    PostgresConfig    `mapstructure:"postgres"`
-	JWT         JWTConfig         `mapstructure:"jwt"`
-	RabbitMQ    RabbitMQConfig    `mapstructure:"rabbitmq"`
-	TaskService TaskServiceConfig `mapstructure:"task_service"`
+	Server   ServerConfig   `mapstructure:"server"`
+	Postgres PostgresConfig `mapstructure:"postgres"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
+	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
 }
 
 type ServerConfig struct {
@@ -31,10 +31,6 @@ type PostgresConfig struct {
 	MinConns        int32         `mapstructure:"min_conns"`
 	MaxConnLifetime time.Duration `mapstructure:"max_conn_lifetime"`
 	MaxConnIdleTime time.Duration `mapstructure:"max_conn_idle_time"`
-}
-
-type TaskServiceConfig struct {
-	BaseURL string `mapstructure:"base_url"`
 }
 
 type JWTConfig struct {
@@ -80,9 +76,6 @@ func Load() (*Config, error) {
 
 	if cfg.RabbitMQ.URL == "" {
 		return nil, fmt.Errorf("RABBITMQ_URL is required")
-	}
-	if cfg.TaskService.BaseURL == "" {
-		return nil, fmt.Errorf("TASK_SERVICE_BASE_URL is required")
 	}
 
 	fmt.Printf("Config loaded - Host=%s, DB=%s, Port=%s\n",

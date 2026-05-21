@@ -97,7 +97,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (access
 	return accessToken, refreshToken, nil
 }
 
-func (s *AuthService) ValidateToken(ctx context.Context, tokenString string) (*domain.User, error) {
+func (s *AuthService) ValidateToken(ctx context.Context, tokenString string) (*model.User, error) {
 	claims, err := s.jwtManager.ParseAccessToken(tokenString)
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ne
 	}
 
 	if err := s.userRepo.RevokeRefreshToken(ctx, refreshToken); err != nil {
-		log.Printf("Warning: failed to revoke old refresh token: %v", err)
+		log.Printf("warning: failed to revoke old refresh token: %v", err)
 	}
 
 	accessToken, err := s.jwtManager.GenerateAccessToken(user)
