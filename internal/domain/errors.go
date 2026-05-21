@@ -10,6 +10,7 @@ var (
 	ErrUserAlreadyExists    = errors.New("user with this email already exists")
 	ErrUserNotFound         = errors.New("user not found")
 	ErrInvalidCredentials   = errors.New("invalid email or password")
+	ErrNonValidUserID       = errors.New("non valid user ID")
 	ErrRefreshTokenNotFound = errors.New("refresh token not found")
 	ErrRefreshTokenRevoked  = errors.New("refresh token was revoked")
 	ErrRefreshTokenExpired  = errors.New("refresh token expired")

@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-
-	"strings"
 )
 
 type TaskClient interface {
@@ -16,14 +14,12 @@ type TaskClient interface {
 }
 
 type taskClient struct {
-	baseURL string
-	rpc     *client.RPCClient
+	rpc *client.RPCClient
 }
 
-func NewTaskClient(baseURL string, client *client.RPCClient) TaskClient {
+func NewTaskClient(client *client.RPCClient) TaskClient {
 	return &taskClient{
-		baseURL: strings.TrimSuffix(baseURL, "/"),
-		rpc:     client,
+		rpc: client,
 	}
 }
 

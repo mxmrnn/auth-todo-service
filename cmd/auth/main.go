@@ -37,9 +37,11 @@ func main() {
 	}
 	defer db.Close()
 
-	// Инициализация слоёв
-	userRepo := repository.NewUserRepository(db)
-	jwtManager := token.NewJWTManager(cfg.JWT.SecretKey, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
+	rabbitConn, err := amqp091.Dial(cfg.RabbitMQ.URL)
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+	defer rabbitConn.Close()
 
 	rabbitMq, err := client.NewRPCClient(cfg.RabbitMQ.URL)
 	if err != nil {
@@ -47,8 +49,20 @@ func main() {
 	}
 	defer rabbitMq.Close()
 
-	taskClient := task.NewTaskClient(cfg.TaskService.BaseURL, rabbitMq) //поменять на конфиг круто
-	authService := service.NewAuthService(userRepo, jwtManager)
+	rabbitCh, err := rabbitConn.Channel()
+	if err != nil {
+		log.Fatalf("Failed to open RabbitMQ channel: %v", err)
+	}
+	defer rabbitCh.Close()
+
+	eventPublisher := publisher.NewPublisher(rabbitCh)
+
+	// Инициализация слоёв
+	userRepo := repository.NewUserRepository(db)
+	jwtManager := token.NewJWTManager(cfg.JWT.SecretKey, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
+
+	taskClient := task.NewTaskClient(rabbitMq) //поменять на конфиг круто
+	authService := service.NewAuthService(userRepo, jwtManager, eventPublisher)
 	authHandler := httpv1.NewAuthHandler(authService, taskClient)
 
 	// Gin Setup

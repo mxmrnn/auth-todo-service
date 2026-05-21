@@ -1,37 +1,38 @@
 package service
 
 import (
+	"auth-todo-service/internal/publisher"
+	"auth-todo-service/internal/transport/http/dto"
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"time"
 
-	//"time"
-
 	"auth-todo-service/internal/domain"
+	"auth-todo-service/internal/domain/model"
 	"auth-todo-service/internal/repository"
 	"auth-todo-service/internal/token"
 
-	//"github.com/google/uuid"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	userRepo   repository.UserRepository
-	jwtManager *token.JWTManager
+	userRepo       repository.UserRepository
+	jwtManager     *token.JWTManager
+	eventPublisher *publisher.Publisher
 }
 
-func NewAuthService(userRepo repository.UserRepository, jwtManager *token.JWTManager) *AuthService {
+func NewAuthService(userRepo repository.UserRepository, jwtManager *token.JWTManager, eventPushisher *publisher.Publisher) *AuthService {
 	return &AuthService{
-		userRepo:   userRepo,
-		jwtManager: jwtManager,
+		userRepo:       userRepo,
+		jwtManager:     jwtManager,
+		eventPublisher: eventPushisher,
 	}
 }
 
-func (s *AuthService) Register(ctx context.Context, fullName, email, password string) (*domain.User, error) {
-	// Проверяем, существует ли пользователь
+func (s *AuthService) Register(ctx context.Context, fullName, email, password string) (*model.User, error) {
 	exists, err := s.userRepo.IsEmailExists(ctx, email)
 	if err != nil {
 		return nil, err
@@ -40,19 +41,33 @@ func (s *AuthService) Register(ctx context.Context, fullName, email, password st
 		return nil, domain.ErrUserAlreadyExists
 	}
 
-	// Хэшируем пароль
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := domain.NewUser(fullName, email, string(hashedPassword))
+	user, err := model.NewUser(fullName, email, string(hashedPassword))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error with create new user: %w", err)
 	}
 	if err := s.userRepo.Create(ctx, user); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error repo insert user: %w", err)
 	}
+
+	go func(u model.User) {
+		eventCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := s.eventPublisher.PublishUserRegistered(eventCtx, dto.UserResponse{
+			ID:       u.ID.String(),
+			Email:    u.Email,
+			FullName: u.FullName,
+			Role:     string(u.Role),
+		}); err != nil {
+			log.Printf("warn failed to publish registration event: %v", err)
+		} else {
+			log.Printf("registration event published for user, %s", u.ID)
+		}
+	}(*user)
 
 	return user, nil
 }
@@ -158,4 +173,17 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ne
 	// Добавить удаление старого рефреш токена
 
 	return accessToken, newRefreshToken, nil
+}
+
+func (s *AuthService) GetUserByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	if id == uuid.Nil {
+		return &model.User{}, domain.ErrNonValidUserID
+	}
+
+	user, err := s.userRepo.GetByID(ctx, id)
+	if err != nil {
+		return &model.User{}, err
+	}
+
+	return user, nil
 }
