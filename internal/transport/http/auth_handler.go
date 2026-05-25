@@ -136,6 +136,17 @@ func (h *AuthHandler) AuthHealth(c *gin.Context) {
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// TODO
+	refreshToken := c.GetHeader("X-Refresh-Token")
+
+	if refreshToken == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "refresh token is required"})
+		return
+	}
+
+	err := h.authService.Logout(c.Request.Context(), refreshToken)
+	if err != nil {
+		log.Printf("Logout error: %v", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "successfully logged out"})
 }

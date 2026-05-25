@@ -187,3 +187,12 @@ func (s *AuthService) GetUserByID(ctx context.Context, id uuid.UUID) (*model.Use
 
 	return user, nil
 }
+
+func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
+	err := s.userRepo.RevokeRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
