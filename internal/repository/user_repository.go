@@ -165,7 +165,7 @@ func (r *userRepository) GetRefreshTokenByValue(ctx context.Context, token strin
 }
 
 func (r *userRepository) RevokeRefreshToken(ctx context.Context, token string) error {
-	query := `UPDATE refresh_tokens SET revoked = true, updated_at = NOW() WHERE token = $1`
+	query := `UPDATE refresh_tokens SET revoked = true WHERE token = $1`
 	_, err := r.db.Exec(ctx, query, token)
 	return err
 }
