@@ -145,7 +145,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (ne
 	}
 
 	if err := s.userRepo.RevokeRefreshToken(ctx, refreshToken); err != nil {
-		log.Printf("warning: failed to revoke old refresh token: %v", err)
+		return "", "", fmt.Errorf("failed to revoke old refresh token: %w", err)
 	}
 
 	accessToken, err := s.jwtManager.GenerateAccessToken(user)
