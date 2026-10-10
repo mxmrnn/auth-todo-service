@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+/bin/
+/dist/
+*.exe
+*.test
+coverage*.out
+coverage*.html
+*.log
+/api
+/auth
+/app
