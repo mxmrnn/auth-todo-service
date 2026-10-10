@@ -1,0 +1,15 @@
+.git
+.idea
+.vscode
+.env
+.env.*
+bin
+dist
+*.exe
+*.test
+coverage*.out
+coverage*.html
+*.log
+/api
+/auth
+/app
