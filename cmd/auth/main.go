@@ -70,7 +70,7 @@ func main() {
 
 	rpcServer, err := rpc.NewServer(cfg.RabbitMQ.URL)
 	if err != nil {
-		log.Fatalf("failed to create rpc server: %w", err)
+		log.Fatalf("failed to create rpc server: %v", err)
 	}
 	rpcHandler := rpc.NewHandler(authService)
 
